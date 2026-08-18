@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" href="data:," />
-  <title>CekTautan — Pemeriksa Keamanan Tautan</title>
+  <title>Informasi — CekTautan</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -17,6 +17,7 @@
       </button>
 
       <a class="brand" href="index.html" aria-label="Ke halaman utama">
+        <span class="brand-badge" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
             <path d="M9 12l2 2 4-4" />
@@ -38,53 +39,47 @@
 
     <section class="hero">
       <div class="hero-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-          <path d="M9 12l2 2 4-4" />
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 8h.01M11 12h1v4h1" />
         </svg>
       </div>
-      <h2 class="hero-title">Periksa Keamanan Tautan</h2>
-      <p class="hero-sub">Tempel tautan atau alamat situs, lalu kami bantu mengecek apakah aman atau berbahaya.</p>
+      <h2 class="hero-title">Informasi</h2>
+      <p class="hero-sub">Tentang halaman ini, cara kerja, dan info developer.</p>
     </section>
 
-    <section class="card scan-card" aria-label="Periksa tautan">
-      <label class="field-label" for="urlInput">Tempel tautan atau alamat situs yang ingin diperiksa</label>
-      <form id="scanForm" class="scan-form" autocomplete="off">
-        <input
-          id="urlInput"
-          type="text"
-          placeholder="Contoh: secure-paypal-login.com"
-          spellcheck="false"
-          aria-label="Tautan yang akan diperiksa"
-        />
-        <button type="submit" id="scanBtn" class="btn-primary">Periksa Keamanan</button>
-      </form>
+    <section class="card" aria-label="Informasi">
+      <div class="card-head"><h2>Tentang Halaman</h2></div>
+      <p class="s-note">
+        CekTautan adalah alat pemeriksa keamanan tautan untuk pengguna awam. Tempel tautan atau alamat
+        situs, lalu alat ini membantu mengecek apakah tautan tersebut <b>Aman</b>, <b>Perlu Diwaspadai</b>,
+        atau <b>Berbahaya</b> sebelum Anda mengkliknya.
+      </p>
 
-      <div id="demoWrap" class="demo-wrap" aria-label="Contoh tautan">
-        <span class="demo-label">Coba contoh:</span>
-        <button type="button" class="demo-chip">paypa1-secure-login.com</button>
-        <button type="button" class="demo-chip">bit.ly/3xYz9Q</button>
-        <button type="button" class="demo-chip">google.com</button>
-        <button type="button" class="demo-chip">login.bni.co.id</button>
-        <button type="button" class="demo-chip">192.168.1.10/login</button>
+      <div class="card-head" style="margin-top:18px"><h2>Penjelasan</h2></div>
+      <p class="s-note">Cara kerja pemeriksaan:</p>
+      <ul class="info-list">
+        <li>Analisis pola alamat: nama situs, subdomain, akhiran, kata mencurigakan, dan lainnya.</li>
+        <li>Deteksi kemiripan merek (typosquat &amp; homoglyph) untuk mengenali situs palsu.</li>
+        <li>Jika diaktifkan di Pengaturan: pemeriksaan DNS (situs aktif/tidak) dan layanan VirusTotal.</li>
+      </ul>
+      <p class="s-note">Hasil akhir dibagi tiga: Aman, Perlu Diwaspadai, dan Berbahaya.</p>
+
+      <div class="card-head" style="margin-top:18px"><h2>Sumber Data</h2></div>
+      <p class="s-note">
+        Deteksi dasar menggunakan analisis pola. Pemeriksaan jaringan (jika diaktifkan) menggunakan
+        cek DNS dan layanan VirusTotal.
+      </p>
+
+      <div class="card-head" style="margin-top:18px"><h2>Info Developer</h2></div>
+      <p class="s-note">Dibuat untuk keamanan pengguna internet.</p>
+      <a class="side-dev" href="https://adelia.asia/#developer-portfolio" target="_blank" rel="noopener noreferrer">Kunjungi portofolio developer &#8599;</a>
+
+      <p class="s-note" style="margin-top:16px">Jangan pernah isi kata sandi atau OTP di situs yang tidak Anda yakini.</p>
+
+      <div class="settings-back">
+        <a href="index.html" class="btn-ghost">&larr; Kembali ke pemeriksa</a>
       </div>
-
-      <button type="button" id="newScanBtn" class="btn-primary btn-new-scan" hidden>Periksa Tautan Lain</button>
-
-      <div id="resultArea" class="result-area" hidden aria-live="polite" role="status"></div>
-    </section>
-
-    <section class="card history-card" id="history" aria-label="Riwayat pemeriksaan">
-      <div class="card-head">
-        <h2>Riwayat Pemeriksaan</h2>
-        <span class="h-actions">
-          <button id="exportHistory" class="btn-ghost" type="button">Ekspor</button>
-          <button id="clearHistory" class="btn-ghost" type="button">Hapus</button>
-        </span>
-      </div>
-      <ol id="historyList" class="history-list">
-        <li class="empty">Belum ada riwayat.</li>
-      </ol>
     </section>
 
     <footer class="app-footer">
@@ -111,7 +106,7 @@
       <a class="side-link" href="index.html">Periksa Tautan</a>
       <a class="side-link" href="index.html#history">Riwayat Pemeriksaan</a>
       <a class="side-link" href="settings.html">Pengaturan</a>
-      <a class="side-link" href="info.html">Informasi</a>
+      <a class="side-link current" href="info.html">Informasi</a>
     </nav>
     <div class="sidebar-info">
       <p class="info-title">Tentang CekTautan</p>
