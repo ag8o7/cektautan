@@ -29,8 +29,8 @@ esac
 NEW="v$MAJOR.$MINOR.$PATCH"
 NEWV="${NEW#v}"
 
-# VERSION stamp in footer HTML: "Version vX.Y.Z"
-sed -i.bak -E "s/Version [v]?[0-9]+\.[0-9]+\.[0-9]+/Version $NEW/g" "$DIR/index.html" 2>/dev/null || true
+# VERSION stamp in footer HTML: ">vX.Y.Z<"
+sed -i.bak -E "s/>v[0-9]+\.[0-9]+\.[0-9]+</>$NEW</g" "$DIR/index.html" 2>/dev/null || true
 rm -f "$DIR/index.html.bak"
 
 # Engine version constant: VERSION: 'X.Y.Z'
@@ -40,6 +40,10 @@ rm -f "$DIR/engine.js.bak"
 # UI fallback version string in app.js
 sed -i.bak -E "s/\|\| '[0-9]+\.[0-9]+\.[0-9]+'/|| '$NEWV'/" "$DIR/app.js"
 rm -f "$DIR/app.js.bak"
+
+# package.json version field
+sed -i.bak -E "s/\"version\": \"[0-9]+\.[0-9]+\.[0-9]+\"/\"version\": \"$NEWV\"/" "$DIR/package.json"
+rm -f "$DIR/package.json.bak"
 
 echo "$NEW" > "$VERSION_FILE"
 echo "version bumped: $CURRENT -> $NEW"

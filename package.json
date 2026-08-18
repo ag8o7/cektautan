@@ -1,7 +1,7 @@
 {
-  "name": "ghostshell-url-scanner",
-  "version": "1.0.2",
-  "description": "GHOSTSHELL :: URL Threat Scanner — deteksi phishing dengan tema terminal/hacker",
+  "name": "cektautan-url-scanner",
+  "version": "1.2.2",
+  "description": "CekTautan :: Pemeriksa keamanan tautan — deteksi phishing untuk pengguna awam",
   "main": "app.js",
   "scripts": {
     "test": "node --test test.js",

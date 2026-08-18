@@ -1,26 +1,23 @@
 /* =========================================================
- *  GHOSTSHELL :: URL Threat Scanner — UI layer
+ *  CekTautan :: URL Threat Scanner — UI layer
  *  Uses window.ENGINE (engine.js) for detection logic.
  * ========================================================= */
 (function () {
   'use strict';
 
   var ENGINE = window.ENGINE;
-  var VERSION = 'v' + (ENGINE && ENGINE.VERSION || '1.1.0');
+  var VERSION = 'v' + (ENGINE && ENGINE.VERSION || '1.2.2');
 
   var $ = function (id) { return document.getElementById(id); };
-  var bootLogEl = $('bootLog');
-  var typedEl = $('typedCmd');
   var form = $('scanForm');
   var input = $('urlInput');
   var resultArea = $('resultArea');
   var historyList = $('historyList');
-  var chip = $('status-chip');
   var footerVersion = $('footerVersion');
   var channelEl = $('channelStatus');
+  var sourceEl = $('sourceInfo');
   var clearBtn = $('clearHistory');
   var exportBtn = $('exportHistory');
-  var settingsPanel = $('settingsPanel');
   var vtKeyInput = $('vtKey');
   var dnsToggle = $('dnsToggle');
   var saveSettingsBtn = $('saveSettings');
@@ -46,17 +43,14 @@
     settings.dns = dnsToggle.checked;
     try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) {}
     updateMode();
-    flashSettingsMsg('PENGATURAN DISIMPAN');
+    flashSettingsMsg('Pengaturan disimpan');
   }
 
   function updateMode() {
-    if (settings.vtKey) {
-      channelEl.textContent = 'LIVE + HEUR';
-      channelEl.style.color = '';
-    } else {
-      channelEl.textContent = 'HEUR (offline)';
-      channelEl.style.color = '#ffe033';
-    }
+    var parts = ['analisis pola'];
+    if (settings.dns) parts.push('cek DNS');
+    if (settings.vtKey) parts.push('VirusTotal');
+    sourceEl.innerHTML = 'Sumber data: <b id="channelStatus">' + parts.join(' + ') + '</b>';
   }
 
   function flashSettingsMsg(text) {
@@ -79,15 +73,36 @@
 
   var history = loadHistory();
 
+  var VERDICT_WORD = { DANGER: 'Berbahaya', WARN: 'Diwaspadai', CLEAN: 'Aman' };
+
   function renderHistory() {
     historyList.innerHTML = '';
+    if (!history.length) {
+      var empty = document.createElement('li');
+      empty.className = 'empty';
+      empty.textContent = 'Belum ada riwayat.';
+      historyList.appendChild(empty);
+      return;
+    }
     history.forEach(function (h) {
       var li = document.createElement('li');
       li.className = h.verdict.toLowerCase();
       var time = new Date(h.ts).toLocaleTimeString();
-      li.innerHTML = '<span class="h-time">' + time + '</span>' +
-        '<span class="h-url">' + escapeHtml(h.input) + '</span>' +
-        '<span class="h-verdict">[' + h.verdict + ':' + h.score + ']</span>';
+      var dot = document.createElement('span');
+      dot.className = 'h-dot';
+      var t = document.createElement('span');
+      t.className = 'h-time';
+      t.textContent = time;
+      var u = document.createElement('span');
+      u.className = 'h-url';
+      u.textContent = h.input;
+      var v = document.createElement('span');
+      v.className = 'h-verdict';
+      v.textContent = (VERDICT_WORD[h.verdict] || h.verdict) + ' (' + h.score + ')';
+      li.appendChild(dot);
+      li.appendChild(t);
+      li.appendChild(u);
+      li.appendChild(v);
       historyList.appendChild(li);
     });
   }
@@ -101,21 +116,21 @@
 
   function exportReport() {
     var lines = [];
-    lines.push('GHOSTSHELL URL THREAT SCANNER — LAPORAN');
+    lines.push('CekTautan — Laporan Pemeriksaan Tautan');
     lines.push('Versi ' + VERSION + ' | ' + new Date().toLocaleString());
     lines.push('='.repeat(56));
     history.forEach(function (h, i) {
       lines.push('#' + (i + 1) + ' [' + new Date(h.ts).toLocaleString() + ']');
-      lines.push('  URL     : ' + h.input);
-      lines.push('  VERDICT : ' + h.verdict + ' | skor ' + h.score + '/100');
+      lines.push('  Tautan  : ' + h.input);
+      lines.push('  HASIL   : ' + (VERDICT_WORD[h.verdict] || h.verdict) + ' | skor ' + h.score + '/100');
       if (h.notes) lines.push('  CATATAN : ' + h.notes);
       lines.push('');
     });
-    if (!history.length) lines.push('(belum ada riwayat scan)');
+    if (!history.length) lines.push('(belum ada riwayat pemeriksaan)');
     var blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'ghostshell-report-' + new Date().toISOString().slice(0, 10) + '.txt';
+    a.download = 'cektautan-report-' + new Date().toISOString().slice(0, 10) + '.txt';
     document.body.appendChild(a);
     a.click();
     setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 100);
@@ -129,27 +144,63 @@
     });
   }
 
-  function sevOf(pts) {
-    if (pts >= 50) return { tag: 'KRITIS', cls: 'sev-critical' };
-    if (pts >= 25) return { tag: 'TINGGI', cls: 'sev-high' };
-    if (pts >= 10) return { tag: 'SEDANG', cls: 'sev-med' };
-    return { tag: 'RENDAH', cls: 'sev-low' };
+  /* Terjemahkan pesan teknis dari engine menjadi bahasa sederhana. */
+  var PLAIN_RULES = [
+    [/URL tidak valid/, 'Alamat ini tidak bisa dibaca dengan benar.'],
+    [/Host berupa IP mentah/, 'Alamatnya berupa angka IP, bukan nama situs. Cara ini sering dipakai penipu.'],
+    [/URL shortener "([^"]+)"/, function (m) { return 'Tautan memakai layanan pemendek (' + m[1] + '). Tujuan aslinya tidak terlihat.'; }],
+    [/TLD berisiko tinggi "([^"]+)"/, function (m) { return 'Akhiran situs (' + m[1] + ') sering dipakai situs penipuan.'; }],
+    [/level subdomain/, 'Terlalu banyak bagian subdomain di alamat — bisa untuk menipu.'],
+    [/Karakter "@"/, 'Ada simbol "@" yang bisa menyembunyikan tujuan sebenarnya dari tautan.'],
+    [/HTTP eksplisit/, 'Situs tidak memakai koneksi aman (HTTP, bukan HTTPS).'],
+    [/Port tidak standar/, 'Situs memakai nomor port yang tidak biasa.'],
+    [/URL sangat panjang/, 'Tautan terlalu panjang, tidak seperti biasanya.'],
+    [/Hostname terlalu panjang/, 'Nama situs terlalu panjang.'],
+    [/titik di hostname/, 'Terlalu banyak titik di nama situs.'],
+    [/Kata "([^"]+)" pada path/, function (m) { return 'Ada kata mencurigakan ("' + m[1] + '") di alamat.'; }],
+    [/angka menempel/, 'Banyak angka di nama situs — sering dipakai situs penipuan.'],
+    [/tanda strip/, 'Banyak tanda "-" di nama situs — ciri khas situs palsu.'],
+    [/typosquat, jarak/, 'Nama situs sangat mirip dengan nama resmi — bisa jadi situs palsu.'],
+    [/hampir sama dengan brand "([^"]+)"/, function (m) { return 'Nama situs mirip sekali dengan brand asli "' + m[1] + '" — bisa jadi situs palsu.'; }],
+    [/karakter mirip brand "([^"]+)"/, function (m) { return 'Nama situs memakai huruf/angka yang meniru brand asli "' + m[1] + '".'; }],
+    [/Nama brand "([^"]+)" \+ kata mencurigakan/, function (m) { return 'Menggabungkan nama "' + m[1] + '" dengan kata mencurigakan (mis. login, secure).'; }],
+    [/Brand "([^"]+)" disembunyikan di subdomain/, function (m) { return 'Nama "' + m[1] + '" disembunyikan di subdomain situs lain — pola login palsu.'; }],
+    [/punycode/, 'Nama situs memakai huruf khusus yang bisa menipu mata.'],
+    [/Karakter aneh/, 'Ada karakter aneh di nama situs.'],
+    [/domain tidak resolve/, 'Situs ini tidak aktif / tidak ditemukan di DNS.'],
+    [/MALICIOUS/, 'Antivirus menandai situs ini berbahaya.'],
+    [/SUSPICIOUS/, 'Antivirus menilai situs ini mencurigakan.'],
+    [/DNS: domain ter-resolve/, 'Situs aktif dan terhubung.'],
+    [/DNS: pemeriksaan gagal/, 'Pemeriksaan DNS tidak bisa dilakukan saat ini.'],
+    [/VirusTotal: gagal/, 'Pemeriksaan VirusTotal gagal dilakukan.']
+  ];
+
+  function plainReason(msg) {
+    for (var i = 0; i < PLAIN_RULES.length; i++) {
+      var m = String(msg).match(PLAIN_RULES[i][0]);
+      if (m) {
+        var r = PLAIN_RULES[i][1];
+        return typeof r === 'function' ? r(m) : r;
+      }
+    }
+    return msg;
   }
 
   function recommendation(verdict) {
     if (verdict === 'DANGER') {
-      return 'JANGAN buka tautan ini. Kemungkinan besar phishing/pencurian data. Jangan isi username, password, OTP, atau data kartu. Jika sudah terlanjur mengisi, segera ganti kredensial akun terkait.';
+      return 'Jangan buka tautan ini. Jangan isi kata sandi, kode OTP, atau data kartu apa pun. Jika sudah pernah mengisinya, segera ganti kata sandi akun terkait.';
     }
     if (verdict === 'WARN') {
-      return 'Tautan mencurigakan. Verifikasi manual: cek ejaan domain utama, jumlah subdomain, dan TLD. Jika tidak yakin dengan keasliannya, jangan dibuka.';
+      return 'Hati-hati. Pastikan dulu apakah situs ini benar-benar resmi. Kalau ragu, lebih baik jangan dibuka.';
     }
-    return 'Tidak ada indikator mencurigakan yang kuat. Tetap waspada: jangan berikan OTP/kredensial ke situs yang tidak kamu yakini.';
+    return 'Tidak ditemukan tanda bahaya yang jelas. Tetap jangan berikan kata sandi atau OTP ke situs yang tidak Anda kenal.';
   }
 
-  function setChip(state) {
-    chip.textContent = state.text;
-    chip.className = 'chip ' + state.cls;
-  }
+  var VERDICT_UI = {
+    DANGER: { title: 'Berbahaya', sub: 'Jangan buka tautan ini.' },
+    WARN: { title: 'Perlu Diwaspadai', sub: 'Tautan ini mencurigakan. Pastikan dulu sebelum membuka.' },
+    CLEAN: { title: 'Aman', sub: 'Tidak ditemukan tanda bahaya yang jelas.' }
+  };
 
   /* ---------------- scan flow ---------------- */
 
@@ -161,18 +212,16 @@
     r.heurScore = r.score;
     currentResult = r;
 
-    setChip({ text: 'SCANNING', cls: 'scanning' });
+    var btn = $('scanBtn');
     input.disabled = true;
-    $('scanBtn').disabled = true;
+    btn.disabled = true;
+    btn.textContent = 'Memeriksa...';
     resultArea.hidden = true;
     resultArea.innerHTML = '';
     scanInProgress = true;
 
-    var promptText = 'ghost_scan --target "' + raw + '"';
-    typePrompt(promptText).then(function () {
-      renderResult(r);
-      runLive(r);
-    });
+    renderResult(r);
+    runLive(r);
   }
 
   function runLive(r) {
@@ -195,6 +244,8 @@
           r.live.vtError = (err && err.message) || 'gagal terhubung';
           applyLive(r);
         });
+    } else if (!settings.dns || p.isIp) {
+      finishScan(r);
     }
   }
 
@@ -206,7 +257,7 @@
     renderResult(r);
 
     var liveDone =
-      (settings.dns && r.live.dns) &&
+      (settings.dns && !r.parsed.isIp ? !!r.live.dns : true) &&
       (settings.vtKey ? (r.live.vt || r.live.vtError) : true);
 
     if (liveDone) finishScan(r);
@@ -215,20 +266,17 @@
   function finishScan(r) {
     scanInProgress = false;
     input.disabled = false;
-    $('scanBtn').disabled = false;
+    var btn = $('scanBtn');
+    btn.disabled = false;
+    btn.textContent = 'Periksa Keamanan';
     input.value = '';
     input.focus();
 
-    setChip({
-      text: r.grade.verdict === 'DANGER' ? 'DANGER' : (r.grade.verdict === 'WARN' ? 'CAUTION' : 'CLEAN'),
-      cls: r.grade.verdict === 'DANGER' ? 'done-danger' : (r.grade.verdict === 'WARN' ? 'scanning' : 'done-clean')
-    });
-
     var notes = [];
     if (r.live.vt && r.live.vt.stats) {
-      notes.push('VirusTotal: ' + r.live.vt.stats.malicious + ' malicious / ' + r.live.vt.stats.suspicious + ' suspicious dari total engine.');
+      notes.push('VirusTotal: ' + r.live.vt.stats.malicious + ' berbahaya / ' + r.live.vt.stats.suspicious + ' mencurigakan.');
     }
-    if (r.live.dns && r.live.dns.ok && !r.live.dns.resolved) notes.push('Domain tidak resolve di DNS.');
+    if (r.live.dns && r.live.dns.ok && !r.live.dns.resolved) notes.push('Situs tidak aktif di DNS.');
 
     addHistory({
       input: r.input,
@@ -247,57 +295,147 @@
     resultArea.className = 'result-area verdict-' + verdictWord;
     resultArea.innerHTML = '';
 
+    var ui = VERDICT_UI[r.grade.verdict];
+
     var head = document.createElement('div');
     head.className = 'result-head';
-    head.innerHTML = '<b>' + r.grade.label + '</b> <span class="score-inline">skor ' + r.score + '/100</span>';
+    var banner = document.createElement('div');
+    banner.className = 'verdict-banner';
+    var dot = document.createElement('span');
+    dot.className = 'verdict-dot';
+    var txt = document.createElement('span');
+    var title = document.createElement('div');
+    title.className = 'verdict-title';
+    title.textContent = ui.title;
+    var sub = document.createElement('div');
+    sub.className = 'verdict-sub';
+    sub.textContent = ui.sub;
+    txt.appendChild(title);
+    txt.appendChild(sub);
+    banner.appendChild(dot);
+    banner.appendChild(txt);
+    head.appendChild(banner);
     resultArea.appendChild(head);
 
     var body = document.createElement('div');
     body.className = 'result-body';
 
+    /* skor risiko */
+    var scoreLine = document.createElement('div');
+    scoreLine.className = 'score-line';
+    var slLabel = document.createElement('div');
+    slLabel.className = 'label';
+    slLabel.textContent = 'Tingkat risiko: ' + r.score + '/100 (' + (r.score >= 50 ? 'tinggi' : r.score >= 20 ? 'sedang' : 'rendah') + ')';
+    var barWrap = document.createElement('div');
+    barWrap.className = 'score-bar-wrap';
+    var bar = document.createElement('div');
+    bar.className = 'score-bar ' + verdictWord;
+    bar.style.width = '0%';
+    barWrap.appendChild(bar);
+    scoreLine.appendChild(slLabel);
+    scoreLine.appendChild(barWrap);
+    body.appendChild(scoreLine);
+
+    /* rekomendasi */
     var rec = document.createElement('div');
     rec.className = 'recommend ' + verdictWord;
-    rec.textContent = '>> REKOMENDASI: ' + recommendation(r.grade.verdict);
+    rec.textContent = recommendation(r.grade.verdict);
     body.appendChild(rec);
 
+    /* alasan (plain language) */
+    var reasons = [];
+    (r.flags || []).forEach(function (f) { reasons.push(f); });
+    (r.live.flags || []).forEach(function (f) { reasons.push(f); });
+
+    var bTitle = document.createElement('div');
+    bTitle.className = 'block-title';
+    bTitle.textContent = reasons.length ? 'Mengapa:' : 'Hasil Pemeriksaan';
+    body.appendChild(bTitle);
+
+    if (!reasons.length) {
+      var okRow = document.createElement('ul');
+      okRow.className = 'plain-list';
+      var okLi = document.createElement('li');
+      okLi.className = 'clean';
+      var okDot = document.createElement('span');
+      okDot.className = 'dot';
+      var okTxt = document.createElement('span');
+      okTxt.textContent = 'Tidak ada indikator mencurigakan yang ditemukan.';
+      okLi.appendChild(okDot);
+      okLi.appendChild(okTxt);
+      okRow.appendChild(okLi);
+      body.appendChild(okRow);
+    } else {
+      var ul = document.createElement('ul');
+      ul.className = 'plain-list';
+      reasons.forEach(function (f) {
+        var li = document.createElement('li');
+        if (f.danger) li.className = 'danger';
+        var d = document.createElement('span');
+        d.className = 'dot';
+        var s = document.createElement('span');
+        s.textContent = plainReason(f.msg);
+        if (f.source === 'DNS' || f.source === 'VT') {
+          var sub2 = document.createElement('div');
+          sub2.className = 'pl-sub';
+          sub2.textContent = f.source === 'DNS' ? '(dari pemeriksaan jaringan)' : '(dari VirusTotal)';
+          s.appendChild(sub2);
+        }
+        li.appendChild(d);
+        li.appendChild(s);
+        ul.appendChild(li);
+      });
+      body.appendChild(ul);
+    }
+
+    /* detail alamat (sederhana) */
     var p = r.parsed;
-    var protoNote = p.hasProtocol ? '' : ' (tidak ditulis — hanya hostname yang dianalisis)';
-    var sum = document.createElement('div');
-    sum.className = 'summary';
-    sum.innerHTML =
-      '<div class="sum-row"><span class="sum-k">TARGET</span><span class="sum-v">' + escapeHtml(r.input) + '</span></div>' +
-      '<div class="sum-row"><span class="sum-k">HOST</span><span class="sum-v">' + escapeHtml(p.host || 'N/A') + '</span></div>' +
-      '<div class="sum-row"><span class="sum-k">DOMAIN UTAMA</span><span class="sum-v">' + escapeHtml(p.regDomain || 'N/A') + '</span></div>' +
-      '<div class="sum-row"><span class="sum-k">TLD</span><span class="sum-v">' + escapeHtml(p.tld || 'N/A') + '</span></div>' +
-      '<div class="sum-row"><span class="sum-k">SUBDOMAIN</span><span class="sum-v">' + p.subdomains.length + ' level' +
-        (p.subdomains.length ? ' (' + escapeHtml(p.subdomains.join('.')) + ')' : '') + '</span></div>' +
-      '<div class="sum-row"><span class="sum-k">PROTOKOL</span><span class="sum-v">' + escapeHtml(p.protocol || 'tidak ditentukan') + protoNote + '</span></div>' +
-      '<div class="sum-row"><span class="sum-k">IP LANGSUNG</span><span class="sum-v">' + (p.isIp ? 'YA — berisiko tinggi' : 'tidak') + '</span></div>' +
-      '<div class="sum-row"><span class="sum-k">SUMBER</span><span class="sum-v">' + (settings.vtKey ? 'heuristik + VirusTotal + DNS' : 'heuristik + DNS (VirusTotal nonaktif)') + '</span></div>';
-    body.appendChild(sum);
+    var dTitle = document.createElement('div');
+    dTitle.className = 'block-title';
+    dTitle.textContent = 'Detail Alamat';
+    body.appendChild(dTitle);
 
-    appendFindings(body, 'HEURISTIK (POLA STATIS)', r.flags);
+    var grid = document.createElement('div');
+    grid.className = 'info-grid';
+    var rows = [
+      ['Tautan yang dicek', r.input],
+      ['Nama situs', p.host || 'N/A'],
+      ['Domain utama', p.regDomain || 'N/A'],
+      ['Akhiran situs', p.tld || 'N/A'],
+      ['Subdomain', p.subdomains.length + ' level' + (p.subdomains.length ? ' (' + p.subdomains.join('.') + ')' : '')],
+      ['Koneksi', p.hasProtocol ? (p.protocol || 'N/A') : 'tidak ditentukan']
+    ];
+    rows.forEach(function (row) {
+      var k = document.createElement('span');
+      k.className = 'k';
+      k.textContent = row[0];
+      var v = document.createElement('span');
+      v.className = 'v';
+      v.textContent = row[1];
+      grid.appendChild(k);
+      grid.appendChild(v);
+    });
+    body.appendChild(grid);
 
-    if (r.live.dns || r.live.vt || r.live.vtError) {
-      var liveFlags = (r.live.flags || []).slice();
+    /* hasil live */
+    if (r.live.dns || r.live.vt || r.live.vtError || settings.vtKey) {
       var liveBlock = document.createElement('div');
       liveBlock.className = 'live-block';
-      var liveHead = document.createElement('div');
-      liveHead.className = 'findings-head';
-      liveHead.textContent = '-- SINYAL LIVE (JARINGAN) --';
-      liveBlock.appendChild(liveHead);
+      var liveTitle = document.createElement('div');
+      liveTitle.className = 'block-title';
+      liveTitle.textContent = 'Pemeriksaan Jaringan';
+      liveBlock.appendChild(liveTitle);
 
       if (r.live.dns) {
         var dnsRow = document.createElement('div');
         dnsRow.className = 'flag-row' + (r.live.dns.ok && !r.live.dns.resolved ? ' danger' : '');
-        var dnsTxt = r.live.dns.ok
+        dnsRow.textContent = r.live.dns.ok
           ? (r.live.dns.resolved
-            ? 'DNS: domain ter-resolve (' + (r.live.dns.ips || []).join(', ') + ').'
-            : 'DNS: domain TIDAK resolve — tidak ditemukan record.')
+            ? 'DNS: situs aktif (' + (r.live.dns.ips || []).join(', ') + ').'
+            : 'DNS: situs tidak ditemukan (tidak aktif).')
           : 'DNS: pemeriksaan gagal (' + (r.live.dns.error || '?') + ').';
-        dnsRow.textContent = dnsTxt;
         liveBlock.appendChild(dnsRow);
-      } else {
+      } else if (settings.dns && !p.isIp) {
         var dnsWait = document.createElement('div');
         dnsWait.className = 'flag-row dim';
         dnsWait.textContent = 'DNS: memeriksa...';
@@ -308,16 +446,14 @@
         var st = r.live.vt.stats;
         var vtRow = document.createElement('div');
         vtRow.className = 'flag-row' + (st && st.malicious > 0 ? ' danger' : '');
-        if (st) {
-          vtRow.textContent = 'VirusTotal: ' + st.malicious + ' malicious · ' + st.suspicious + ' suspicious · ' + st.harmless + ' harmless.';
-        } else {
-          vtRow.textContent = 'VirusTotal: hasil tidak tersedia.';
-        }
+        vtRow.textContent = st
+          ? 'VirusTotal: ' + st.malicious + ' berbahaya, ' + st.suspicious + ' mencurigakan, ' + st.harmless + ' aman.'
+          : 'VirusTotal: hasil tidak tersedia.';
         liveBlock.appendChild(vtRow);
         if (r.live.vt.reportUrl) {
           var vtLink = document.createElement('div');
-          vtLink.className = 'metric';
-          vtLink.innerHTML = '<a class="vt-link" href="' + escapeHtml(r.live.vt.reportUrl) + '" target="_blank" rel="noopener noreferrer">BUKA_LAPORAN_VIRUSTOTAL &gt;&gt;</a>';
+          vtLink.className = 'flag-row';
+          vtLink.innerHTML = '<a class="vt-link" href="' + escapeHtml(r.live.vt.reportUrl) + '" target="_blank" rel="noopener noreferrer">Lihat laporan lengkap VirusTotal</a>';
           liveBlock.appendChild(vtLink);
         }
       } else if (r.live.vtError) {
@@ -332,114 +468,12 @@
         liveBlock.appendChild(vtWait);
       }
 
-      liveFlags.forEach(function (f) {
-        var row = document.createElement('div');
-        row.className = 'flag-row' + (f.danger ? ' danger' : '');
-        var sev = sevOf(f.pts);
-        row.innerHTML = '<span class="sev ' + sev.cls + '">' + sev.tag + '</span> <span class="pts">[+' + f.pts + ']</span> ' + escapeHtml(f.msg);
-        liveBlock.appendChild(row);
-      });
-
       body.appendChild(liveBlock);
-    } else if (settings.dns || settings.vtKey) {
-      var wait = document.createElement('div');
-      wait.className = 'flag-row dim';
-      wait.textContent = '>> sinyal live sedang dikumpulkan...';
-      body.appendChild(wait);
     }
-
-    var scoreWrap = document.createElement('div');
-    scoreWrap.className = 'score-line';
-    scoreWrap.innerHTML = '<span class="metric">SKOR ANCAMAN: <span class="val">' + r.score + '/100</span> ' +
-      '(' + (r.score >= 50 ? 'tinggi' : r.score >= 20 ? 'sedang' : 'rendah') + ')</span>';
-    var barWrap = document.createElement('div');
-    barWrap.className = 'score-bar-wrap';
-    var bar = document.createElement('div');
-    bar.className = 'score-bar ' + verdictWord;
-    bar.style.width = '0%';
-    barWrap.appendChild(bar);
-    scoreWrap.appendChild(barWrap);
-    body.appendChild(scoreWrap);
 
     resultArea.appendChild(body);
 
     setTimeout(function () { bar.style.width = r.score + '%'; }, 40);
-  }
-
-  function appendFindings(parent, label, flags) {
-    var fHead = document.createElement('div');
-    fHead.className = 'findings-head';
-    fHead.textContent = '-- ' + label + ' (' + flags.length + ') --';
-    parent.appendChild(fHead);
-
-    if (!flags.length) {
-      var none = document.createElement('div');
-      none.className = 'metric';
-      none.textContent = 'Tidak ada indikator mencurigakan pada lapisan ini.';
-      parent.appendChild(none);
-      return;
-    }
-
-    flags.forEach(function (f) {
-      var row = document.createElement('div');
-      row.className = 'flag-row' + (f.danger ? ' danger' : '');
-      var sev = sevOf(f.pts);
-      row.innerHTML = '<span class="sev ' + sev.cls + '">' + sev.tag + '</span> ' +
-        '<span class="pts">[+' + f.pts + ']</span> ' + escapeHtml(f.msg);
-      parent.appendChild(row);
-    });
-  }
-
-  /* ---------------- boot / typing ---------------- */
-
-  var bootLines = [
-    { cls: 'system', txt: '> GHOSTSHELL v' + VERSION.slice(1) + ' initializing...' },
-    { cls: 'ok', txt: '[OK] signature DB: ' + (ENGINE.SUSPICIOUS_TLDS.length + ENGINE.SHORTENERS.length + ENGINE.SUSPICIOUS_KEYWORDS.length + ENGINE.BRANDS.length) + ' pattern' },
-    { cls: 'ok', txt: '[OK] heuristik 15 lapis + brand-similarity (edit-distance) aktif' },
-    { cls: 'dim', txt: '> DNS live-check via cloudflare-dns.com (DoH)' + (settings.vtKey ? '' : ' | VirusTotal: NONAKTIF — isi API key di SETTINGS') },
-    { cls: 'warn', txt: '> jangan pernah membuka tautan berstatus DANGER' }
-  ];
-
-  function typeBoot(step) {
-    if (step >= bootLines.length) {
-      updateMode();
-      chip.textContent = 'READY';
-      chip.className = 'chip idle';
-      input.focus();
-      return;
-    }
-    var line = bootLines[step];
-    var div = document.createElement('div');
-    div.className = 'row ' + line.cls;
-    bootLogEl.appendChild(div);
-    var chars = line.txt;
-    var i = 0;
-    var typeInt = setInterval(function () {
-      div.textContent = line.txt.slice(0, ++i);
-      if (i >= chars.length) {
-        clearInterval(typeInt);
-        setTimeout(function () { typeBoot(step + 1); }, 80);
-      }
-    }, 9);
-  }
-
-  function typePrompt(text) {
-    var i = 0;
-    typedEl.textContent = '';
-    return new Promise(function (resolve) {
-      var int = setInterval(function () {
-        typedEl.textContent = text.slice(0, ++i);
-        if (i >= text.length) { clearInterval(int); resolve(); }
-      }, 22);
-    });
-  }
-
-  function updateClock() {
-    var d = new Date();
-    $('clock').textContent =
-      String(d.getHours()).padStart(2, '0') + ':' +
-      String(d.getMinutes()).padStart(2, '0') + ':' +
-      String(d.getSeconds()).padStart(2, '0');
   }
 
   /* ---------------- events ---------------- */
@@ -450,7 +484,7 @@
     var value = input.value.trim();
     if (!value) {
       input.focus();
-      input.style.borderColor = '#ff3344';
+      input.style.borderColor = '#dc2626';
       setTimeout(function () { input.style.borderColor = ''; }, 800);
       return;
     }
@@ -479,18 +513,17 @@
     settings.dns = dnsToggle.checked;
     try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) {}
     updateMode();
-    flashSettingsMsg('API KEY DIHAPUS');
+    flashSettingsMsg('API key dihapus');
   });
 
   /* ---------------- init ---------------- */
 
   vtKeyInput.value = settings.vtKey;
   dnsToggle.checked = settings.dns;
-  footerVersion.textContent = 'Version ' + VERSION;
-  setInterval(updateClock, 1000);
-  updateClock();
+  footerVersion.textContent = VERSION;
+  updateMode();
   renderHistory();
-  typeBoot(0);
+  input.focus();
 
-  window.GHOSTSHELL = { version: VERSION, engine: ENGINE, runScan: runScan };
+  window.CEKTAUTAN = { version: VERSION, engine: ENGINE, runScan: runScan };
 })();
