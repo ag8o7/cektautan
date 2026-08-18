@@ -22,7 +22,7 @@
           <p class="tagline">Pemeriksa keamanan tautan — cek sebelum klik</p>
         </span>
       </div>
-      <span id="footerVersion" class="version">v1.2.2</span>
+      <span id="footerVersion" class="version">v1.3.0</span>
     </header>
 
     <section class="card scan-card" aria-label="Periksa tautan">
@@ -46,6 +46,8 @@
         <button type="button" class="demo-chip">login.bni.co.id</button>
         <button type="button" class="demo-chip">192.168.1.10/login</button>
       </div>
+
+      <button type="button" id="newScanBtn" class="btn-primary btn-new-scan" hidden>Periksa Tautan Lain</button>
 
       <div id="resultArea" class="result-area" hidden aria-live="polite" role="status"></div>
     </section>
@@ -91,7 +93,10 @@
     </details>
 
     <footer class="app-footer">
-      <span id="sourceInfo">Sumber data: analisis pola + <b id="channelStatus">cek DNS</b></span>
+      <div class="footer-row">
+        <span id="sourceInfo">Sumber data: analisis pola + <b id="channelStatus">cek DNS</b></span>
+        <span class="copyright">&copy; 2026 CekTautan &mdash; dibuat untuk keamanan pengguna internet</span>
+      </div>
       <span class="disclaimer">Jangan pernah isi kata sandi atau OTP di situs yang tidak Anda yakini.</span>
     </footer>
   </main>

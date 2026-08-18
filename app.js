@@ -6,7 +6,7 @@
   'use strict';
 
   var ENGINE = window.ENGINE;
-  var VERSION = 'v' + (ENGINE && ENGINE.VERSION || '1.2.2');
+  var VERSION = 'v' + (ENGINE && ENGINE.VERSION || '1.3.0');
 
   var $ = function (id) { return document.getElementById(id); };
   var form = $('scanForm');
@@ -23,6 +23,7 @@
   var saveSettingsBtn = $('saveSettings');
   var clearKeyBtn = $('clearKey');
   var demoWrap = $('demoWrap');
+  var newScanBtn = $('newScanBtn');
 
   /* ---------------- settings (localStorage) ---------------- */
 
@@ -216,12 +217,33 @@
     input.disabled = true;
     btn.disabled = true;
     btn.textContent = 'Memeriksa...';
+    form.hidden = true;
+    demoWrap.hidden = true;
+    newScanBtn.hidden = false;
     resultArea.hidden = true;
     resultArea.innerHTML = '';
     scanInProgress = true;
 
     renderResult(r);
     runLive(r);
+
+    setTimeout(function () {
+      resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 60);
+  }
+
+  function backToInput() {
+    if (scanInProgress) return;
+    form.hidden = false;
+    demoWrap.hidden = false;
+    newScanBtn.hidden = true;
+    resultArea.hidden = true;
+    resultArea.className = 'result-area';
+    resultArea.innerHTML = '';
+    input.value = '';
+    input.disabled = false;
+    input.focus();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function runLive(r) {
@@ -491,8 +513,11 @@
     runScan(value);
   });
 
+  newScanBtn.addEventListener('click', backToInput);
+
   demoWrap.addEventListener('click', function (e) {
     if (e.target.classList.contains('demo-chip')) {
+      if (scanInProgress) return;
       input.value = e.target.textContent;
       runScan(e.target.textContent);
     }
