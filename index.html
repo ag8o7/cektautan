@@ -10,6 +10,12 @@
 <body>
   <main class="page" role="main">
     <header class="app-header">
+      <button type="button" id="sidebarToggle" class="icon-btn" aria-label="Buka menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+
       <div class="brand">
         <span class="brand-badge" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -17,12 +23,18 @@
             <path d="M9 12l2 2 4-4" />
           </svg>
         </span>
-        <span>
+        <span class="brand-text">
           <h1>CekTautan</h1>
           <p class="tagline">Pemeriksa keamanan tautan — cek sebelum klik</p>
         </span>
       </div>
-      <span id="footerVersion" class="version">v1.3.0</span>
+
+      <button type="button" id="settingsBtn" class="icon-btn" aria-label="Buka pengaturan">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        </svg>
+      </button>
     </header>
 
     <section class="card scan-card" aria-label="Periksa tautan">
@@ -95,11 +107,38 @@
     <footer class="app-footer">
       <div class="footer-row">
         <span id="sourceInfo">Sumber data: analisis pola + <b id="channelStatus">cek DNS</b></span>
-        <span class="copyright">&copy; 2026 CekTautan &mdash; dibuat untuk keamanan pengguna internet</span>
+        <span class="visitors" title="Dihitung per perangkat/browser">Total pengunjung: <b id="visitorCount">0</b></span>
       </div>
+      <span class="copyright">&copy; 2026 CekTautan &mdash; dibuat untuk keamanan pengguna internet</span>
       <span class="disclaimer">Jangan pernah isi kata sandi atau OTP di situs yang tidak Anda yakini.</span>
     </footer>
   </main>
+
+  <div id="sidebarOverlay" class="sidebar-overlay" aria-hidden="true"></div>
+  <aside id="sidebar" class="sidebar" aria-label="Menu utama">
+    <div class="sidebar-head">
+      <span class="brand-badge" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          <path d="M9 12l2 2 4-4" />
+        </svg>
+      </span>
+      <span class="sidebar-brand-text">
+        <h2>CekTautan</h2>
+        <span id="footerVersion" class="version">v1.4.0</span>
+      </span>
+      <button type="button" id="sidebarClose" class="icon-btn" aria-label="Tutup menu">&#10005;</button>
+    </div>
+    <nav class="sidebar-nav" aria-label="Navigasi">
+      <button type="button" class="side-link" data-target="scan">Periksa Tautan</button>
+      <button type="button" class="side-link" data-target="history">Riwayat Pemeriksaan</button>
+      <button type="button" class="side-link" data-target="settings">Pengaturan</button>
+    </nav>
+    <div class="sidebar-foot">
+      <p>Total pengunjung: <b id="visitorCountSide">0</b></p>
+      <p class="side-note">Jumlah dihitung per perangkat/browser pengunjung.</p>
+    </div>
+  </aside>
 
   <script src="engine.js"></script>
   <script src="app.js"></script>

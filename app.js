@@ -6,7 +6,7 @@
   'use strict';
 
   var ENGINE = window.ENGINE;
-  var VERSION = 'v' + (ENGINE && ENGINE.VERSION || '1.3.0');
+  var VERSION = 'v' + (ENGINE && ENGINE.VERSION || '1.4.0');
 
   var $ = function (id) { return document.getElementById(id); };
   var form = $('scanForm');
@@ -24,6 +24,13 @@
   var clearKeyBtn = $('clearKey');
   var demoWrap = $('demoWrap');
   var newScanBtn = $('newScanBtn');
+  var sidebar = $('sidebar');
+  var sidebarOverlay = $('sidebarOverlay');
+  var sidebarToggle = $('sidebarToggle');
+  var sidebarClose = $('sidebarClose');
+  var settingsBtn = $('settingsBtn');
+  var visitorEl = $('visitorCount');
+  var visitorSideEl = $('visitorCountSide');
 
   /* ---------------- settings (localStorage) ---------------- */
 
@@ -244,6 +251,57 @@
     input.disabled = false;
     input.focus();
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /* ---------------- sidebar & header buttons ---------------- */
+
+  function setSidebar(open) {
+    sidebar.classList.toggle('open', open);
+    sidebarOverlay.classList.toggle('open', open);
+    sidebar.setAttribute('aria-hidden', String(!open));
+    sidebarToggle.setAttribute('aria-expanded', String(open));
+  }
+
+  function openSettingsPanel() {
+    var sp = $('settingsPanel');
+    if (!sp.open) sp.open = true;
+    setSidebar(false);
+    setTimeout(function () {
+      sp.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 60);
+  }
+
+  function goToSection(target) {
+    setSidebar(false);
+    if (target === 'scan') {
+      backToInput();
+      return;
+    }
+    if (target === 'settings') {
+      openSettingsPanel();
+      return;
+    }
+    var el = target === 'history' ? $('historyList').closest('.card') : null;
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /* ---------------- visitor counter (localStorage) ---------------- */
+
+  var VISITOR_KEY = 'ghost_visitors_v1';
+  var VISITED_KEY = 'ghost_visited_v1';
+
+  function countVisitor() {
+    var count = 0;
+    try {
+      count = parseInt(localStorage.getItem(VISITOR_KEY), 10) || 0;
+      if (!localStorage.getItem(VISITED_KEY)) {
+        count += 1;
+        localStorage.setItem(VISITOR_KEY, String(count));
+        localStorage.setItem(VISITED_KEY, '1');
+      }
+    } catch (e) {}
+    visitorEl.textContent = String(count);
+    if (visitorSideEl) visitorSideEl.textContent = String(count);
   }
 
   function runLive(r) {
@@ -515,6 +573,18 @@
 
   newScanBtn.addEventListener('click', backToInput);
 
+  sidebarToggle.addEventListener('click', function () { setSidebar(true); });
+  sidebarClose.addEventListener('click', function () { setSidebar(false); });
+  sidebarOverlay.addEventListener('click', function () { setSidebar(false); });
+  settingsBtn.addEventListener('click', openSettingsPanel);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') setSidebar(false);
+  });
+  sidebar.addEventListener('click', function (e) {
+    var link = e.target.closest('.side-link');
+    if (link) goToSection(link.getAttribute('data-target'));
+  });
+
   demoWrap.addEventListener('click', function (e) {
     if (e.target.classList.contains('demo-chip')) {
       if (scanInProgress) return;
@@ -548,6 +618,7 @@
   footerVersion.textContent = VERSION;
   updateMode();
   renderHistory();
+  countVisitor();
   input.focus();
 
   window.CEKTAUTAN = { version: VERSION, engine: ENGINE, runScan: runScan };
