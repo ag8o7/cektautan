@@ -518,7 +518,6 @@ a.icon-btn, a.btn-ghost, a.side-link { text-decoration: none; }
 .copyright { display: block; white-space: normal; }
 .disclaimer { display: block; }
 .app-footer b { color: var(--text); }
-.app-footer .visitors { font-weight: 600; }
 
 /* ---------- sidebar ---------- */
 

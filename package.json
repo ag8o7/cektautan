@@ -1,6 +1,6 @@
 {
   "name": "cektautan-url-scanner",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "description": "CekTautan :: Pemeriksa keamanan tautan — deteksi phishing untuk pengguna awam",
   "main": "app.js",
   "scripts": {
