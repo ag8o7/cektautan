@@ -1,11 +1,11 @@
 {
   "name": "cektautan-url-scanner",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "CekTautan :: Pemeriksa keamanan tautan — deteksi phishing untuk pengguna awam",
   "main": "app.js",
   "scripts": {
     "test": "node --test test.js",
-    "serve": "python3 -m http.server 8080",
+    "serve": "python3 app.py 8080",
     "bump": "./bump.sh patch"
   },
   "license": "MIT"

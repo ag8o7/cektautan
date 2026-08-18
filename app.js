@@ -6,7 +6,7 @@
   'use strict';
 
   var ENGINE = window.ENGINE;
-  var VERSION = 'v' + (ENGINE && ENGINE.VERSION || '1.5.0');
+  var VERSION = 'v' + (ENGINE && ENGINE.VERSION || '1.6.0');
 
   var $ = function (id) { return document.getElementById(id); };
   var form = $('scanForm');
@@ -30,6 +30,8 @@
   var sidebarClose = $('sidebarClose');
   var visitorEl = $('visitorCount');
   var visitorSideEl = $('visitorCountSide');
+  var activeEl = $('activeCount');
+  var activeSideEl = $('activeCountSide');
 
   /* ---------------- settings (localStorage) ---------------- */
 
@@ -265,12 +267,33 @@
     if (sidebarToggle) sidebarToggle.setAttribute('aria-expanded', String(open));
   }
 
-  /* ---------------- visitor counter (localStorage) ---------------- */
+  /* ---------------- visitor counter (server) ---------------- */
 
   var VISITOR_KEY = 'ghost_visitors_v1';
   var VISITED_KEY = 'ghost_visited_v1';
+  var VISITOR_ID_KEY = 'ghost_visitor_id_v1';
 
-  function countVisitor() {
+  function setVisitorUI(total, active) {
+    if (visitorEl) visitorEl.textContent = String(total);
+    if (visitorSideEl) visitorSideEl.textContent = String(total);
+    if (activeEl) activeEl.textContent = String(active);
+    if (activeSideEl) activeSideEl.textContent = String(active);
+  }
+
+  function visitorId() {
+    var id = null;
+    try { id = localStorage.getItem(VISITOR_ID_KEY); } catch (e) {}
+    if (!id) {
+      id = (window.crypto && window.crypto.randomUUID)
+        ? window.crypto.randomUUID()
+        : ('v' + Date.now().toString(36) + Math.random().toString(36).slice(2));
+      try { localStorage.setItem(VISITOR_ID_KEY, id); } catch (e) {}
+    }
+    return id;
+  }
+
+  /* Fallback bila server tanpa backend (hanya file statis): hitung unik per perangkat. */
+  function fallbackVisitor() {
     var count = 0;
     try {
       count = parseInt(localStorage.getItem(VISITOR_KEY), 10) || 0;
@@ -280,9 +303,27 @@
         localStorage.setItem(VISITED_KEY, '1');
       }
     } catch (e) {}
-    if (visitorEl) visitorEl.textContent = String(count);
-    if (visitorSideEl) visitorSideEl.textContent = String(count);
+    setVisitorUI(count, 1);
   }
+
+  function countVisitor() {
+    var id = visitorId();
+    fetch('/api/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: id })
+    }).then(function (res) { return res.json(); }).then(function (j) {
+      setVisitorUI(j.total, j.active);
+    }).catch(fallbackVisitor);
+  }
+
+  window.addEventListener('pagehide', function () {
+    var id = null;
+    try { id = localStorage.getItem(VISITOR_ID_KEY); } catch (e) {}
+    if (id && navigator.sendBeacon) {
+      navigator.sendBeacon('/api/leave', JSON.stringify({ id: id }));
+    }
+  });
 
   function runLive(r) {
     var p = r.parsed;
@@ -601,6 +642,7 @@
   updateMode();
   if (historyList) renderHistory();
   countVisitor();
+  setInterval(countVisitor, 30000);
   if (input) input.focus();
 
   window.CEKTAUTAN = { version: VERSION, engine: ENGINE, runScan: runScan };
