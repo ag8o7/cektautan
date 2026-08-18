@@ -22,8 +22,23 @@ from urllib.parse import urlparse
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 DATA_FILE = os.path.join(BASE, 'visitors.json')
+VERSION_FILE = os.path.join(BASE, 'VERSION')
 ACTIVE_TTL = 60          # detik tanpa sinyal = dianggap tidak aktif
 HEARTBEAT = 30           # klien mengirim sinyal tiap 30 detik
+
+
+def read_app_version():
+    try:
+        with open(VERSION_FILE, encoding='utf-8') as f:
+            line = f.readline().strip()
+        if line.lower().startswith('v'):
+            line = line[1:]
+        return line
+    except Exception:
+        return ''
+
+
+APP_VERSION = read_app_version()
 
 MIME = {
     '.html': 'text/html; charset=utf-8',
@@ -128,6 +143,9 @@ class Handler(SimpleHTTPRequestHandler):
         path = urlparse(self.path).path
         if path == '/api/stats':
             self._send_json(stats())
+            return
+        if path == '/api/version':
+            self._send_json({'version': APP_VERSION})
             return
         if path in ('/', ''):
             path = '/index.html'

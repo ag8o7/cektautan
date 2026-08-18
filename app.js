@@ -6,7 +6,7 @@
   'use strict';
 
   var ENGINE = window.ENGINE;
-  var VERSION = 'v' + (ENGINE && ENGINE.VERSION || '1.8.2');
+  var VERSION = 'v' + (ENGINE && ENGINE.VERSION || '1.9.0');
 
   var $ = function (id) { return document.getElementById(id); };
   var form = $('scanForm');
@@ -32,6 +32,7 @@
   var visitorSideEl = $('visitorCountSide');
   var activeEl = $('activeCount');
   var activeSideEl = $('activeCountSide');
+  var updateAlertEl = $('updateAlert');
 
   /* ---------------- settings (localStorage) ---------------- */
 
@@ -335,6 +336,45 @@
       navigator.sendBeacon('/api/leave', JSON.stringify({ id: id }));
     }
   });
+
+  /* ---------------- update notification ---------------- */
+
+  function parseVersion(v) {
+    var m = String(v || '').replace(/^v/i, '').match(/^(\d+)\.(\d+)\.(\d+)/);
+    return m ? [parseInt(m[1], 10), parseInt(m[2], 10), parseInt(m[3], 10)] : null;
+  }
+
+  function checkUpdate() {
+    if (!updateAlertEl) return;
+    fetch('/api/version', { cache: 'no-store' })
+      .then(function (res) { return res.json(); })
+      .then(function (j) {
+        var cur = parseVersion(ENGINE && ENGINE.VERSION);
+        var latest = parseVersion(j.version);
+        if (!cur || !latest) return;
+        var newer = latest[0] > cur[0] ||
+          (latest[0] === cur[0] && latest[1] > cur[1]) ||
+          (latest[0] === cur[0] && latest[1] === cur[1] && latest[2] > cur[2]);
+        if (!newer) {
+          updateAlertEl.hidden = true;
+          updateAlertEl.innerHTML = '';
+          return;
+        }
+        updateAlertEl.hidden = false;
+        updateAlertEl.innerHTML =
+          '<div class="update-icon">' +
+          '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>' +
+          '</div>' +
+          '<div class="update-text">Tersedia versi baru <b>' + escapeHtml(j.version) + '</b>. Muat ulang untuk menggunakan CekTautan terbaru.</div>' +
+          '<button type="button" class="update-btn" id="updateNowBtn">Perbarui</button>' +
+          '<button type="button" class="update-close" id="updateCloseBtn" aria-label="Tutup">&times;</button>';
+        var now = $('updateNowBtn');
+        var close = $('updateCloseBtn');
+        if (now) now.addEventListener('click', function () { location.reload(true); });
+        if (close) close.addEventListener('click', function () { updateAlertEl.hidden = true; });
+      })
+      .catch(function () { /* server tanpa endpoint: abaikan */ });
+  }
 
   function runLive(r) {
     var p = r.parsed;
@@ -669,6 +709,8 @@
   if (historyList) renderHistory();
   countVisitor();
   setInterval(countVisitor, 30000);
+  checkUpdate();
+  setInterval(checkUpdate, 60000);
   if (input) input.focus();
 
   window.CEKTAUTAN = { version: VERSION, engine: ENGINE, runScan: runScan };
