@@ -6,7 +6,7 @@
   'use strict';
 
   var ENGINE = window.ENGINE;
-  var VERSION = 'v' + (ENGINE && ENGINE.VERSION || '1.11.1');
+  var VERSION = 'v' + (ENGINE && ENGINE.VERSION || '1.12.0');
 
   var $ = function (id) { return document.getElementById(id); };
   var form = $('scanForm');
@@ -29,6 +29,7 @@
   var sidebarToggle = $('sidebarToggle');
   var sidebarClose = $('sidebarClose');
   var updateAlertEl = $('updateAlert');
+  var visitEl = $('visitCount');
 
   /* ---------------- settings (localStorage) ---------------- */
 
@@ -273,6 +274,20 @@
     if (sidebarOverlay) sidebarOverlay.classList.toggle('open', open);
     if (sidebar) sidebar.setAttribute('aria-hidden', String(!open));
     if (sidebarToggle) sidebarToggle.setAttribute('aria-expanded', String(open));
+  }
+
+  /* ---------------- total kunjungan (counter pihak ketiga) ---------------- */
+
+  function loadVisitCount() {
+    fetch('https://api.countapi.xyz/hit/cektautan/totalvisits', { cache: 'no-store' })
+      .then(function (res) { return res.json(); })
+      .then(function (j) {
+        if (visitEl) visitEl.textContent = (typeof j.value === 'number') ? String(j.value) : '—';
+      })
+      .catch(function () {
+        if (visitEl) visitEl.textContent = '—';
+        setTimeout(loadVisitCount, 5000);
+      });
   }
 
   /* ---------------- update notification ---------------- */
@@ -645,6 +660,7 @@
   if (footerVersion) footerVersion.textContent = VERSION;
   updateMode();
   if (historyList) renderHistory();
+  loadVisitCount();
   checkUpdate();
   setInterval(checkUpdate, 60000);
   if (input) input.focus();
