@@ -6,7 +6,7 @@
   'use strict';
 
   var ENGINE = window.ENGINE;
-  var VERSION = 'v' + (ENGINE && ENGINE.VERSION || '1.12.1');
+  var VERSION = 'v' + (ENGINE && ENGINE.VERSION || '1.12.2');
 
   var $ = function (id) { return document.getElementById(id); };
   var form = $('scanForm');
@@ -278,13 +278,35 @@
 
   /* ---------------- total kunjungan (counter pihak ketiga) ---------------- */
 
+  var VISIT_COUNTED_KEY = 'ghost_visit_counted_v1';
+
+  function todayStr() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  function visitApi(path) {
+    return fetch('https://countapi.mileshilliard.com/api/v1/' + path, { cache: 'no-store' })
+      .then(function (res) { return res.json(); });
+  }
+
+  function showVisitValue(j) {
+    var n = parseInt(j && j.value, 10);
+    visitEl.textContent = isNaN(n) ? '—' : n;
+  }
+
+  /* hit hanya sekali per perangkat per hari; sisanya baca (get) tanpa menambah. */
   function loadVisitCount() {
     if (!visitEl) return;
-    fetch('https://countapi.mileshilliard.com/api/v1/hit/cektautan-total-kunjungan', { cache: 'no-store' })
-      .then(function (res) { return res.json(); })
+    var counted = null;
+    try { counted = localStorage.getItem(VISIT_COUNTED_KEY); } catch (e) {}
+    var already = counted === todayStr();
+    visitApi(already ? 'get/cektautan-total-kunjungan' : 'hit/cektautan-total-kunjungan')
       .then(function (j) {
-        var v = parseInt(j && j.value, 10);
-        visitEl.textContent = isNaN(v) ? '—' : v;
+        showVisitValue(j);
+        if (!already) {
+          try { localStorage.setItem(VISIT_COUNTED_KEY, todayStr()); } catch (e) {}
+        }
       })
       .catch(function () {
         if (visitEl._retried) {
@@ -294,6 +316,14 @@
         visitEl._retried = true;
         setTimeout(loadVisitCount, 5000);
       });
+  }
+
+  /* refresh angka tiap 30 detik agar tampak realtime tanpa menambah kunjungan. */
+  function readVisitCount() {
+    if (!visitEl || !visitEl.textContent || visitEl._retried) return;
+    visitApi('get/cektautan-total-kunjungan')
+      .then(showVisitValue)
+      .catch(function () {});
   }
 
   /* ---------------- update notification ---------------- */
@@ -667,6 +697,7 @@
   updateMode();
   if (historyList) renderHistory();
   loadVisitCount();
+  setInterval(readVisitCount, 30000);
   checkUpdate();
   setInterval(checkUpdate, 60000);
   if (input) input.focus();
