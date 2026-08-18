@@ -522,6 +522,24 @@ a.icon-btn, a.btn-ghost, a.side-link { text-decoration: none; }
 .sidebar-foot b { color: var(--text); }
 .side-note { color: var(--muted); font-size: 12px; margin-top: 4px; }
 
+.sidebar-info {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.info-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.side-dev {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #93c5fd;
+  text-decoration: none;
+}
+.side-dev:hover { text-decoration: underline; color: #bfdbfe; }
+
 @media (max-width: 600px) {
   .scan-form { flex-direction: column; }
   .btn-primary { padding: 13px 16px; }
