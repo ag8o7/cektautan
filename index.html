@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="data:," />
+  <title>GHOSTSHELL :: URL Threat Scanner</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="matrix-overlay" aria-hidden="true"></div>
+
+  <main class="terminal" role="main">
+    <header class="term-header">
+      <div class="term-title">
+        <span class="led led-red"></span>
+        <span class="led led-yellow"></span>
+        <span class="led led-green"></span>
+        <span class="title-text">root@ghostshell:~/scanner</span>
+      </div>
+      <div class="term-meta">
+        <span id="status-chip" class="chip idle">BOOT</span>
+        <span id="clock" class="clock">00:00:00</span>
+      </div>
+    </header>
+
+    <section class="term-body">
+      <div class="boot-log" id="bootLog" aria-live="polite"></div>
+
+      <div class="prompt-line">
+        <span class="prompt">ghost@phish-net:~$</span>
+        <span class="typed" id="typedCmd"></span><span class="cursor">▮</span>
+      </div>
+
+      <details class="settings" id="settingsPanel">
+        <summary>⚙ SETTINGS — koneksi live (opsional)</summary>
+        <div class="settings-body">
+          <label class="s-row">
+            <span class="s-label">VirusTotal API Key</span>
+            <input id="vtKey" type="password" placeholder="tempel API key VirusTotal (gratis di virustotal.com)" autocomplete="off" />
+          </label>
+          <label class="s-row">
+            <span class="s-label">Cek DNS live (Cloudflare DoH)</span>
+            <input id="dnsToggle" type="checkbox" checked />
+          </label>
+          <div class="s-actions">
+            <button id="saveSettings" class="ghost-btn" type="button">[ SIMPAN ]</button>
+            <button id="clearKey" class="ghost-btn" type="button">[ HAPUS KEY ]</button>
+            <span id="settingsMsg" class="s-msg" role="status"></span>
+          </div>
+          <div class="s-note">
+            Tanpa API key, scanner berjalan offline dengan heuristik + cek DNS.
+            API key hanya disimpan di browser kamu (localStorage), tidak dikirim ke server lain selain VirusTotal.
+          </div>
+        </div>
+      </details>
+
+      <form id="scanForm" class="scan-form" autocomplete="off">
+        <input
+          id="urlInput"
+          type="text"
+          placeholder="Tempel URL / domain untuk discan, contoh: secure-paypa1-login.com"
+          spellcheck="false"
+          aria-label="Target URL"
+        />
+        <button type="submit" id="scanBtn">RUN_SCAN</button>
+      </form>
+
+      <div id="demoWrap" class="demo-wrap" aria-label="Contoh target">
+        <span class="demo-label">Coba:</span>
+        <button type="button" class="demo-chip">paypa1-secure-login.com</button>
+        <button type="button" class="demo-chip">bit.ly/3xYz9Q</button>
+        <button type="button" class="demo-chip">google.com</button>
+        <button type="button" class="demo-chip">login.bni.co.id</button>
+        <button type="button" class="demo-chip">192.168.1.10/login</button>
+      </div>
+
+      <div id="resultArea" class="result-area" hidden aria-live="polite" role="status"></div>
+
+      <div class="history-head">
+        <span>// SCAN_HISTORY</span>
+        <span class="h-actions">
+          <button id="exportHistory" class="ghost-btn" type="button">[ EXPORT ]</button>
+          <button id="clearHistory" class="ghost-btn" type="button">[ CLEAR ]</button>
+        </span>
+      </div>
+      <ol id="historyList" class="history-list"></ol>
+    </section>
+
+    <footer class="term-footer">
+      <span id="footerVersion">Version v1.1.0</span>
+      <span>sumber-data: <b id="channelStatus">—</b></span>
+    </footer>
+  </main>
+
+  <script src="engine.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "name": "ghostshell-url-scanner",
+  "version": "1.0.2",
+  "description": "GHOSTSHELL :: URL Threat Scanner — deteksi phishing dengan tema terminal/hacker",
+  "main": "app.js",
+  "scripts": {
+    "test": "node --test test.js",
+    "serve": "python3 -m http.server 8080",
+    "bump": "./bump.sh patch"
+  },
+  "license": "MIT"
+}
