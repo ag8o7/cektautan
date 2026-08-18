@@ -596,6 +596,7 @@ a.icon-btn, a.btn-ghost, a.side-link { text-decoration: none; }
 .side-note { color: var(--muted); font-size: 12px; margin-top: 4px; }
 .visit-stat { font-size: 14px; font-weight: 600; }
 .visit-stat b { color: #93c5fd; }
+.visit-badge { display: inline-block; margin-top: 6px; border-radius: 8px; max-width: 100%; }
 
 .sidebar-info {
   margin-top: 14px;
