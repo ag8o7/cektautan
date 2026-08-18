@@ -594,6 +594,8 @@ a.icon-btn, a.btn-ghost, a.side-link { text-decoration: none; }
 }
 .sidebar-foot b { color: var(--text); }
 .side-note { color: var(--muted); font-size: 12px; margin-top: 4px; }
+.visit-stat { font-size: 14px; font-weight: 600; }
+.visit-stat b { color: #93c5fd; }
 
 .sidebar-info {
   margin-top: 14px;

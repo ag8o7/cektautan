@@ -6,7 +6,7 @@
   'use strict';
 
   var ENGINE = window.ENGINE;
-  var VERSION = 'v' + (ENGINE && ENGINE.VERSION || '1.10.0');
+  var VERSION = 'v' + (ENGINE && ENGINE.VERSION || '1.11.0');
 
   var $ = function (id) { return document.getElementById(id); };
   var form = $('scanForm');
@@ -29,6 +29,7 @@
   var sidebarToggle = $('sidebarToggle');
   var sidebarClose = $('sidebarClose');
   var updateAlertEl = $('updateAlert');
+  var visitEl = $('visitCount');
 
   /* ---------------- settings (localStorage) ---------------- */
 
@@ -645,9 +646,22 @@
   if (footerVersion) footerVersion.textContent = VERSION;
   updateMode();
   if (historyList) renderHistory();
+  loadVisitCount();
   checkUpdate();
   setInterval(checkUpdate, 60000);
   if (input) input.focus();
+
+  /* ---------------- third-party visit counter ---------------- */
+
+  function loadVisitCount() {
+    if (!visitEl) return;
+    fetch('https://api.countapi.xyz/hit/cektautan/totalvisits', { cache: 'no-store' })
+      .then(function (res) { return res.json(); })
+      .then(function (j) {
+        visitEl.textContent = (typeof j.value === 'number') ? String(j.value) : '—';
+      })
+      .catch(function () { visitEl.textContent = '—'; });
+  }
 
   window.CEKTAUTAN = { version: VERSION, engine: ENGINE, runScan: runScan };
 })();
