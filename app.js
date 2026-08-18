@@ -6,7 +6,7 @@
   'use strict';
 
   var ENGINE = window.ENGINE;
-  var VERSION = 'v' + (ENGINE && ENGINE.VERSION || '1.12.0');
+  var VERSION = 'v' + (ENGINE && ENGINE.VERSION || '1.12.1');
 
   var $ = function (id) { return document.getElementById(id); };
   var form = $('scanForm');
@@ -279,13 +279,19 @@
   /* ---------------- total kunjungan (counter pihak ketiga) ---------------- */
 
   function loadVisitCount() {
-    fetch('https://api.countapi.xyz/hit/cektautan/totalvisits', { cache: 'no-store' })
+    if (!visitEl) return;
+    fetch('https://countapi.mileshilliard.com/api/v1/hit/cektautan-total-kunjungan', { cache: 'no-store' })
       .then(function (res) { return res.json(); })
       .then(function (j) {
-        if (visitEl) visitEl.textContent = (typeof j.value === 'number') ? String(j.value) : '—';
+        var v = parseInt(j && j.value, 10);
+        visitEl.textContent = isNaN(v) ? '—' : v;
       })
       .catch(function () {
-        if (visitEl) visitEl.textContent = '—';
+        if (visitEl._retried) {
+          visitEl.innerHTML = '<img class="visit-badge" src="https://visitor-badge.laobi.icu/badge?page_id=cektautan.index&left_text=Total%20Kunjungan&left_color=0f1a30&right_color=2563eb" alt="Total kunjungan" />';
+          return;
+        }
+        visitEl._retried = true;
         setTimeout(loadVisitCount, 5000);
       });
   }
