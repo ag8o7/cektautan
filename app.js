@@ -6,7 +6,7 @@
   'use strict';
 
   var ENGINE = window.ENGINE;
-  var VERSION = 'v' + (ENGINE && ENGINE.VERSION || '1.6.1');
+  var VERSION = 'v' + (ENGINE && ENGINE.VERSION || '1.7.0');
 
   var $ = function (id) { return document.getElementById(id); };
   var form = $('scanForm');
