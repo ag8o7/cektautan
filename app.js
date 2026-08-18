@@ -6,7 +6,7 @@
   'use strict';
 
   var ENGINE = window.ENGINE;
-  var VERSION = 'v' + (ENGINE && ENGINE.VERSION || '1.8.0');
+  var VERSION = 'v' + (ENGINE && ENGINE.VERSION || '1.8.1');
 
   var $ = function (id) { return document.getElementById(id); };
   var form = $('scanForm');
@@ -220,6 +220,17 @@
   var currentResult = null;
   var scanInProgress = false;
 
+  function showLoading() {
+    resultArea.hidden = false;
+    resultArea.className = 'result-area';
+    resultArea.innerHTML = '';
+    var box = document.createElement('div');
+    box.className = 'loading';
+    box.innerHTML = '<div class="spinner" aria-hidden="true"></div><p class="loading-text">Sedang memeriksa tautan...</p>';
+    resultArea.appendChild(box);
+    resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   function runScan(raw) {
     var r = ENGINE.scanUrl(raw);
     r.heurScore = r.score;
@@ -232,16 +243,16 @@
     form.hidden = true;
     demoWrap.hidden = true;
     newScanBtn.hidden = false;
-    resultArea.hidden = true;
-    resultArea.innerHTML = '';
     scanInProgress = true;
 
-    renderResult(r);
-    runLive(r);
+    showLoading();
 
     setTimeout(function () {
-      resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 60);
+      resultArea.hidden = true;
+      resultArea.innerHTML = '';
+      renderResult(r);
+      runLive(r);
+    }, 650);
   }
 
   function backToInput() {
