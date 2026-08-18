@@ -335,6 +335,9 @@ a.icon-btn, a.btn-ghost, a.side-link { text-decoration: none; }
 }
 .info-grid .k { color: var(--muted); }
 .info-grid .v { word-break: break-all; font-weight: 500; }
+.mini-list { list-style: none; display: flex; flex-direction: column; gap: 3px; margin: 2px 0; }
+.mini-list li { font-size: 13px; color: var(--text); padding-left: 14px; position: relative; word-break: break-all; }
+.mini-list li::before { content: '\203A'; position: absolute; left: 0; color: var(--primary); }
 
 .live-block { border-top: 1px solid var(--border-soft); margin-top: 16px; padding-top: 4px; }
 .flag-row { font-size: 14px; padding: 7px 0; color: var(--text); word-break: break-word; }

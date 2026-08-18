@@ -6,7 +6,7 @@
   'use strict';
 
   var ENGINE = window.ENGINE;
-  var VERSION = 'v' + (ENGINE && ENGINE.VERSION || '1.8.1');
+  var VERSION = 'v' + (ENGINE && ENGINE.VERSION || '1.8.2');
 
   var $ = function (id) { return document.getElementById(id); };
   var form = $('scanForm');
@@ -514,7 +514,7 @@
       ['Nama situs', p.host || 'N/A'],
       ['Domain utama', p.regDomain || 'N/A'],
       ['Akhiran situs', p.tld || 'N/A'],
-      ['Subdomain', p.subdomains.length + ' level' + (p.subdomains.length ? ' (' + p.subdomains.join('.') + ')' : '')],
+      ['Subdomain', 'SUBDOMAIN'],
       ['Koneksi', p.hasProtocol ? (p.protocol || 'N/A') : 'tidak ditentukan']
     ];
     rows.forEach(function (row) {
@@ -523,7 +523,22 @@
       k.textContent = row[0];
       var v = document.createElement('span');
       v.className = 'v';
-      v.textContent = row[1];
+      if (row[1] === 'SUBDOMAIN') {
+        if (p.subdomains.length) {
+          var ul = document.createElement('ul');
+          ul.className = 'mini-list';
+          p.subdomains.forEach(function (s) {
+            var li = document.createElement('li');
+            li.textContent = s;
+            ul.appendChild(li);
+          });
+          v.appendChild(ul);
+        } else {
+          v.textContent = 'Tidak ada';
+        }
+      } else {
+        v.textContent = row[1];
+      }
       grid.appendChild(k);
       grid.appendChild(v);
     });
