@@ -6,7 +6,7 @@
   'use strict';
 
   var ENGINE = window.ENGINE;
-  var VERSION = 'v' + (ENGINE && ENGINE.VERSION || '1.4.0');
+  var VERSION = 'v' + (ENGINE && ENGINE.VERSION || '1.5.0');
 
   var $ = function (id) { return document.getElementById(id); };
   var form = $('scanForm');
@@ -28,7 +28,6 @@
   var sidebarOverlay = $('sidebarOverlay');
   var sidebarToggle = $('sidebarToggle');
   var sidebarClose = $('sidebarClose');
-  var settingsBtn = $('settingsBtn');
   var visitorEl = $('visitorCount');
   var visitorSideEl = $('visitorCountSide');
 
@@ -47,6 +46,7 @@
   var settings = loadSettings();
 
   function saveSettings() {
+    if (!vtKeyInput || !dnsToggle) return;
     settings.vtKey = vtKeyInput.value.trim();
     settings.dns = dnsToggle.checked;
     try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) {}
@@ -55,6 +55,7 @@
   }
 
   function updateMode() {
+    if (!sourceEl) return;
     var parts = ['analisis pola'];
     if (settings.dns) parts.push('cek DNS');
     if (settings.vtKey) parts.push('VirusTotal');
@@ -63,6 +64,7 @@
 
   function flashSettingsMsg(text) {
     var msg = $('settingsMsg');
+    if (!msg) return;
     msg.textContent = text;
     clearTimeout(msg._t);
     msg._t = setTimeout(function () { msg.textContent = ''; }, 2500);
@@ -84,6 +86,7 @@
   var VERDICT_WORD = { DANGER: 'Berbahaya', WARN: 'Diwaspadai', CLEAN: 'Aman' };
 
   function renderHistory() {
+    if (!historyList) return;
     historyList.innerHTML = '';
     if (!history.length) {
       var empty = document.createElement('li');
@@ -256,33 +259,10 @@
   /* ---------------- sidebar & header buttons ---------------- */
 
   function setSidebar(open) {
-    sidebar.classList.toggle('open', open);
-    sidebarOverlay.classList.toggle('open', open);
-    sidebar.setAttribute('aria-hidden', String(!open));
-    sidebarToggle.setAttribute('aria-expanded', String(open));
-  }
-
-  function openSettingsPanel() {
-    var sp = $('settingsPanel');
-    if (!sp.open) sp.open = true;
-    setSidebar(false);
-    setTimeout(function () {
-      sp.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 60);
-  }
-
-  function goToSection(target) {
-    setSidebar(false);
-    if (target === 'scan') {
-      backToInput();
-      return;
-    }
-    if (target === 'settings') {
-      openSettingsPanel();
-      return;
-    }
-    var el = target === 'history' ? $('historyList').closest('.card') : null;
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (sidebar) sidebar.classList.toggle('open', open);
+    if (sidebarOverlay) sidebarOverlay.classList.toggle('open', open);
+    if (sidebar) sidebar.setAttribute('aria-hidden', String(!open));
+    if (sidebarToggle) sidebarToggle.setAttribute('aria-expanded', String(open));
   }
 
   /* ---------------- visitor counter (localStorage) ---------------- */
@@ -300,7 +280,7 @@
         localStorage.setItem(VISITED_KEY, '1');
       }
     } catch (e) {}
-    visitorEl.textContent = String(count);
+    if (visitorEl) visitorEl.textContent = String(count);
     if (visitorSideEl) visitorSideEl.textContent = String(count);
   }
 
@@ -558,34 +538,34 @@
 
   /* ---------------- events ---------------- */
 
-  form.addEventListener('submit', function (e) {
-    e.preventDefault();
-    if (scanInProgress) return;
-    var value = input.value.trim();
-    if (!value) {
-      input.focus();
-      input.style.borderColor = '#dc2626';
-      setTimeout(function () { input.style.borderColor = ''; }, 800);
-      return;
-    }
-    runScan(value);
-  });
+  if (form && input) {
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (scanInProgress) return;
+      var value = input.value.trim();
+      if (!value) {
+        input.focus();
+        input.style.borderColor = '#dc2626';
+        setTimeout(function () { input.style.borderColor = ''; }, 800);
+        return;
+      }
+      runScan(value);
+    });
+  }
 
-  newScanBtn.addEventListener('click', backToInput);
+  if (newScanBtn) newScanBtn.addEventListener('click', backToInput);
 
-  sidebarToggle.addEventListener('click', function () { setSidebar(true); });
-  sidebarClose.addEventListener('click', function () { setSidebar(false); });
-  sidebarOverlay.addEventListener('click', function () { setSidebar(false); });
-  settingsBtn.addEventListener('click', openSettingsPanel);
+  if (sidebarToggle) sidebarToggle.addEventListener('click', function () { setSidebar(true); });
+  if (sidebarClose) sidebarClose.addEventListener('click', function () { setSidebar(false); });
+  if (sidebarOverlay) sidebarOverlay.addEventListener('click', function () { setSidebar(false); });
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') setSidebar(false);
   });
-  sidebar.addEventListener('click', function (e) {
-    var link = e.target.closest('.side-link');
-    if (link) goToSection(link.getAttribute('data-target'));
+  if (sidebar) sidebar.addEventListener('click', function (e) {
+    if (e.target.closest('.side-link')) setSidebar(false);
   });
 
-  demoWrap.addEventListener('click', function (e) {
+  if (demoWrap) demoWrap.addEventListener('click', function (e) {
     if (e.target.classList.contains('demo-chip')) {
       if (scanInProgress) return;
       input.value = e.target.textContent;
@@ -593,33 +573,35 @@
     }
   });
 
-  clearBtn.addEventListener('click', function () {
+  if (clearBtn) clearBtn.addEventListener('click', function () {
     history = [];
     persistHistory();
     renderHistory();
   });
 
-  exportBtn.addEventListener('click', exportReport);
+  if (exportBtn) exportBtn.addEventListener('click', exportReport);
 
-  saveSettingsBtn.addEventListener('click', saveSettings);
-  clearKeyBtn.addEventListener('click', function () {
-    vtKeyInput.value = '';
-    settings.vtKey = '';
-    settings.dns = dnsToggle.checked;
-    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) {}
-    updateMode();
-    flashSettingsMsg('API key dihapus');
-  });
+  if (saveSettingsBtn && vtKeyInput && dnsToggle) {
+    saveSettingsBtn.addEventListener('click', saveSettings);
+    clearKeyBtn.addEventListener('click', function () {
+      vtKeyInput.value = '';
+      settings.vtKey = '';
+      settings.dns = dnsToggle.checked;
+      try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) {}
+      updateMode();
+      flashSettingsMsg('API key dihapus');
+    });
+  }
 
   /* ---------------- init ---------------- */
 
-  vtKeyInput.value = settings.vtKey;
-  dnsToggle.checked = settings.dns;
-  footerVersion.textContent = VERSION;
+  if (vtKeyInput) vtKeyInput.value = settings.vtKey;
+  if (dnsToggle) dnsToggle.checked = settings.dns;
+  if (footerVersion) footerVersion.textContent = VERSION;
   updateMode();
-  renderHistory();
+  if (historyList) renderHistory();
   countVisitor();
-  input.focus();
+  if (input) input.focus();
 
   window.CEKTAUTAN = { version: VERSION, engine: ENGINE, runScan: runScan };
 })();

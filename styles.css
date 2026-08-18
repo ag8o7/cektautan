@@ -40,21 +40,26 @@ body {
 /* ---------- header ---------- */
 
 .app-header {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  min-height: 44px;
   margin-bottom: 20px;
 }
 
 .brand {
-  flex: 1;
-  min-width: 0;
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
 .brand-text { min-width: 0; }
+
+#sidebarToggle { position: absolute; left: 0; top: 0; }
+#settingsBtn { position: absolute; right: 0; top: 0; }
+
+a.icon-btn, a.btn-ghost, a.side-link { text-decoration: none; }
 
 .icon-btn {
   display: inline-flex;
@@ -71,6 +76,7 @@ body {
   transition: background 0.15s, border-color 0.15s;
 }
 .icon-btn:hover { background: #f1f5f9; border-color: #cbd5e1; }
+.icon-btn.current { background: #e0ecff; border-color: var(--primary); color: var(--primary); }
 
 .brand-badge {
   display: inline-flex;
@@ -362,6 +368,8 @@ body {
 .s-actions { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
 .s-msg { color: var(--green); font-size: 13px; }
 .s-note { color: var(--muted); font-size: 13px; margin-top: 10px; }
+.settings-back { margin-top: 18px; }
+.settings-back .btn-ghost { display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px; font-size: 14px; }
 
 /* ---------- footer ---------- */
 
@@ -434,6 +442,8 @@ body {
   flex: 1;
 }
 .side-link {
+  display: block;
+  width: 100%;
   text-align: left;
   padding: 12px 14px;
   border: none;

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" href="data:," />
-  <title>CekTautan — Pemeriksa Keamanan Tautan</title>
+  <title>Pengaturan — CekTautan</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -29,7 +29,7 @@
         </span>
       </div>
 
-      <a id="settingsBtn" class="icon-btn" href="settings.html" aria-label="Buka pengaturan">
+      <a id="settingsBtn" class="icon-btn current" href="settings.html" aria-label="Buka pengaturan">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="3" />
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
@@ -37,44 +37,34 @@
       </a>
     </header>
 
-    <section class="card scan-card" aria-label="Periksa tautan">
-      <label class="field-label" for="urlInput">Tempel tautan atau alamat situs yang ingin diperiksa</label>
-      <form id="scanForm" class="scan-form" autocomplete="off">
-        <input
-          id="urlInput"
-          type="text"
-          placeholder="Contoh: secure-paypal-login.com"
-          spellcheck="false"
-          aria-label="Tautan yang akan diperiksa"
-        />
-        <button type="submit" id="scanBtn" class="btn-primary">Periksa Keamanan</button>
-      </form>
-
-      <div id="demoWrap" class="demo-wrap" aria-label="Contoh tautan">
-        <span class="demo-label">Coba contoh:</span>
-        <button type="button" class="demo-chip">paypa1-secure-login.com</button>
-        <button type="button" class="demo-chip">bit.ly/3xYz9Q</button>
-        <button type="button" class="demo-chip">google.com</button>
-        <button type="button" class="demo-chip">login.bni.co.id</button>
-        <button type="button" class="demo-chip">192.168.1.10/login</button>
-      </div>
-
-      <button type="button" id="newScanBtn" class="btn-primary btn-new-scan" hidden>Periksa Tautan Lain</button>
-
-      <div id="resultArea" class="result-area" hidden aria-live="polite" role="status"></div>
-    </section>
-
-    <section class="card history-card" id="history" aria-label="Riwayat pemeriksaan">
+    <section class="card" aria-label="Pengaturan">
       <div class="card-head">
-        <h2>Riwayat Pemeriksaan</h2>
-        <span class="h-actions">
-          <button id="exportHistory" class="btn-ghost" type="button">Ekspor</button>
-          <button id="clearHistory" class="btn-ghost" type="button">Hapus</button>
-        </span>
+        <h2>Pengaturan</h2>
       </div>
-      <ol id="historyList" class="history-list">
-        <li class="empty">Belum ada riwayat.</li>
-      </ol>
+      <p class="s-note">
+        Tanpa pengaturan apa pun, CekTautan sudah berfungsi. Bagian ini hanya menambah pemeriksaan
+        dari jaringan untuk hasil yang lebih teliti.
+      </p>
+      <label class="s-row">
+        <span class="s-label">Cek DNS (situs aktif/tidak)</span>
+        <input id="dnsToggle" type="checkbox" checked />
+      </label>
+      <label class="s-row">
+        <span class="s-label">VirusTotal API Key</span>
+        <input id="vtKey" type="password" placeholder="Isi hanya jika punya API key VirusTotal" autocomplete="off" />
+      </label>
+      <div class="s-actions">
+        <button id="saveSettings" class="btn-ghost" type="button">Simpan</button>
+        <button id="clearKey" class="btn-ghost" type="button">Hapus Key</button>
+        <span id="settingsMsg" class="s-msg" role="status"></span>
+      </div>
+      <p class="s-note">
+        API key hanya disimpan di browser Anda dan hanya dikirim ke VirusTotal untuk memeriksa tautan.
+        Key gratis bisa dibuat di virustotal.com.
+      </p>
+      <div class="settings-back">
+        <a href="index.html" class="btn-ghost">&larr; Kembali ke pemeriksa</a>
+      </div>
     </section>
 
     <footer class="app-footer">

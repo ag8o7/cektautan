@@ -33,6 +33,10 @@ NEWV="${NEW#v}"
 sed -i.bak -E "s/>v[0-9]+\.[0-9]+\.[0-9]+</>$NEW</g" "$DIR/index.html" 2>/dev/null || true
 rm -f "$DIR/index.html.bak"
 
+# Same stamp on the settings page
+sed -i.bak -E "s/>v[0-9]+\.[0-9]+\.[0-9]+</>$NEW</g" "$DIR/settings.html" 2>/dev/null || true
+rm -f "$DIR/settings.html.bak"
+
 # Engine version constant: VERSION: 'X.Y.Z'
 sed -i.bak -E "s/(VERSION[[:space:]]*:[[:space:]]*)'[0-9]+\.[0-9]+\.[0-9]+'/\1'$NEWV'/" "$DIR/engine.js"
 rm -f "$DIR/engine.js.bak"
